@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكاة الأضحية بطريقة مسلية</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        h1 {
+            color: #000000;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .scene {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+            perspective: 1000px;
+        }
+        
+        .animal-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 1s;
+        }
+        
+        .animal {
+            width: 250px;
+            transition: all 0.5s ease;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .knife {
+            position: absolute;
+            top: -20px;
+            left: 50px;
+            width: 80px;
+            transform: rotate(-30deg);
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+        
+        .meat {
+            width: 250px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .btn {
+            margin: 20px 0;
+            padding: 12px 30px;
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            background-color: #b71c1c;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            margin: 30px auto;
+            padding: 15px;
+            max-width: 400px;
+            font-size: 1.5rem;
+            color: #388e3c;
+            background-color: #f1f8e9;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 1s;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+        }
+        
+        .counter {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: #8B4513;
+        }
+        
+        .reset-btn {
+            background-color: #607d8b;
+            margin-top: 10px;
+        }
+        
+        .reset-btn:hover {
+            background-color: #455a64;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(5deg); }
+            50% { transform: translateX(-50%) rotate(-5deg); }
+            75% { transform: translateX(-50%) rotate(5deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .blood {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #d32f2f;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <h1> محاكاة الأضحية </h1>
+    
+    <div class="counter">عدد الأضاحي: <span id="count">0</span></div>
+    
+    <div class="scene">
+        <div class="animal-container" id="animalContainer">
+            <img class="animal" id="animal" src="/1-37.jpg" alt="Cow">
+            <img class="knife" id="knife" src="/OIP-removebg-preview (1).png" alt="Knife">
+            <img class="meat" id="meat" src="/cut-of-meat-emoji-2048x1509-72xd3l2v.png" alt="Meat">
+        </div>
+    </div>
+    
+    <button class="btn" id="sacrificeBtn" onclick="startSacrifice()">اضحي الآن 🐄</button>
+    <button class="btn reset-btn" id="resetBtn" onclick="resetSacrifice()" style="display:none;">إعادة المحاولة</button>
+    
+    <div class="message" id="message">
+         مبروك!  ضحيت ببلاش 
+        <div>تقبل الله منا ومنك</div>
+    </div>
+    
+    <div class="celebration" id="celebration"></div>
+    
+    <audio id="successSound" src="https://www.soundjay.com/human/sounds/applause-01.mp3" preload="auto"></audio>
+    <audio id="knifeSound" src="https://www.soundjay.com/mechanical/sounds/knife-sharpening-01.mp3" preload="auto"></audio>
+    
+    <script>
+        let sacrificeCount = 0;
+        
+        function startSacrifice() {
+            const btn = document.getElementById('sacrificeBtn');
+            btn.disabled = true;
+            btn.textContent = 'جاري الذبح...';
+            
+            const knife = document.getElementById('knife');
+            const animal = document.getElementById('animal');
+            const meat = document.getElementById('meat');
+            const message = document.getElementById('message');
+            const knifeSound = document.getElementById('knifeSound');
+            const successSound = document.getElementById('successSound');
+            
+            // Play knife sound
+            knifeSound.currentTime = 0;
+            knifeSound.play();
+            
+            // Knife animation
+            knife.style.transform = 'rotate(-30deg) translateY(150px)';
+            
+            // Animal shake animation
+            animal.classList.add('shake');
+            
+            // Create blood effects
+            createBloodEffects();
+            
+            setTimeout(() => {
+                // Hide animal and show meat
+                animal.style.opacity = '0';
+                meat.style.opacity = '1';
+                
+                // Play success sound
+                successSound.play();
+                
+                // Show message
+                message.style.display = 'block';
+                
+                // Show reset button
+                document.getElementById('resetBtn').style.display = 'inline-block';
+                
+                // Celebration effect
+                startCelebration();
+                
+                // Update counter
+                sacrificeCount++;
+                document.getElementById('count').textContent = sacrificeCount;
+                
+            }, 1500);
+        }
+        
+        function resetSacrifice() {
+            const btn = document.getElementById('sacrificeBtn');
+            const knife = document.getElementById('knife');
+            const animal = document.getElementById('animal');
+            const meat = document.getElementById('meat');
+            const message = document.getElementById('message');
+            
+            btn.disabled = false;
+            btn.textContent = 'اضحي الآن 🐄';
+            
+            knife.style.transform = 'rotate(-30deg)';
+            animal.style.opacity = '1';
+            meat.style.opacity = '0';
+            animal.classList.remove('shake');
+            message.style.display = 'none';
+            document.getElementById('resetBtn').style.display = 'none';
+            
+            // Clear celebration
+            document.getElementById('celebration').style.display = 'none';
+            document.getElementById('celebration').innerHTML = '';
+            
+            // Clear blood
+            document.querySelectorAll('.blood').forEach(el => el.remove());
+        }
+        
+        function createBloodEffects() {
+            const container = document.getElementById('animalContainer');
+            
+            for (let i = 0; i < 10; i++) {
+                const blood = document.createElement('div');
+                blood.classList.add('blood');
+                
+                // Random position
+                const x = Math.random() * 200 + 50;
+                const y = Math.random() * 200 + 50;
+                
+                blood.style.left = `${x}px`;
+                blood.style.top = `${y}px`;
+                
+                // Random size
+                const size = Math.random() * 20 + 10;
+                blood.style.width = `${size}px`;
+                blood.style.height = `${size}px`;
+                
+                // Animation
+                blood.style.opacity = '0.8';
+                blood.style.transition = 'all 1s ease';
+                
+                setTimeout(() => {
+                    blood.style.opacity = '0';
+                    blood.style.transform = 'scale(1.5)';
+                }, 100);
+                
+                container.appendChild(blood);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    blood.remove();
+                }, 1000);
+            }
+        }
+        
+        function startCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.style.display = 'block';
+            
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Random color
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random position
+                confetti.style.left = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = Math.random() * 10 + 5;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // Animation
+                const animationDuration = Math.random() * 3 + 2;
+                confetti.style.animation = `fall ${animationDuration}s linear forwards`;
+                
+                // Random shape
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                } else {
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                }
+                
+                celebration.appendChild(confetti);
+                
+                // Start animation
+                setTimeout(() => {
+                    confetti.style.opacity = '1';
+                    confetti.style.top = `${Math.random() * 100}%`;
+                    confetti.style.left = `${Math.random() * 100}%`;
+                }, 10);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, animationDuration * 1000);
+            }
+            
+            // Add CSS for animation
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes fall {
+                    to {
+                        transform: translateY(100vh) rotate(360deg);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    </script>
+            <div class="copyright">
+            <p>&copy;The site was created as a joke by Amr Shalaby, a web development enthusiast, and Farah Mohamed, a UI/UX designer, along with Ziad Mandour as a designer and media buyer.</p>
+        </div>
+</body>
+</html>
